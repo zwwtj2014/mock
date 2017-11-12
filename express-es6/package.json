@@ -1,0 +1,16 @@
+{
+  "name": "mock-express",
+  "version": "0.0.0",
+  "description": "mock express",
+  "main": "index.js",
+  "directories": {
+  },
+  "scripts": {
+    "test": "node ./test/index.js"
+  },
+  "keywords": [
+    "express"
+  ],
+  "author": "CLAM",
+  "license": "MIT"
+}
