@@ -2,7 +2,7 @@
  * @Author: clam
  * @Date: 2017-11-12 00:20:39
  * @Last Modified by: clam
- * @Last Modified time: 2017-11-16 00:08:36
+ * @Last Modified time: 2017-11-16 00:34:46
  */
 'use strict'
 const http = require('http');
@@ -58,7 +58,7 @@ class App {
                 res.end(msg);
             }
         };
-        return this._router.handle(req, res);
+        return this._router.handle(req, res, done);
     }
 }
 exports = module.exports = App;

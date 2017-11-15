@@ -1,12 +1,16 @@
 const express = require('..')
 const app = express()
 
-app.put('/', function (req, res) {
-    res.send('put Hello World!');
-});
+app.get('/', function(req, res, next) {
+    next();
+})
 
-app.get('/', function (req, res) {
-    res.send('get Hello World!');
+.get('/', function(req, res, next) {
+    next(new Error('error'));
+})
+
+.get('/', function(req, res) {
+    res.send('third');
 });
 
 app.listen(3000, function () {
