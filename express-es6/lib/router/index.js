@@ -2,45 +2,71 @@
  * @Author: clam
  * @Date: 2017-11-12 00:20:18
  * @Last Modified by: clam
- * @Last Modified time: 2017-11-12 22:33:26
+ * @Last Modified time: 2017-11-16 00:21:59
  */
 'use strict'
 const Layer = require('./layer');
 const Route = require('./route');
+const http = require('http');
 
 class Router {
 
     constructor() {
-        let commonLayer = new Layer('*', (req, res) => {
-            res.writeHead(200, {
-                'Content-Type': 'text/plain'
-            });
-            res.end('404');
+        // let commonLayer = new Layer('*', (req, res) => {
+        //     res.writeHead(200, {
+        //         'Content-Type': 'text/plain'
+        //     });
+        //     res.end('404');
+        // });
+        this.stack = [];
+
+        http.METHODS.forEach(method => {
+            method = method.toLowerCase();
+            Router.prototype[method] = (path, fn) => {
+                let route = this.route(path);
+                route[method].call(route, fn);
+                return this;
+            };
         });
-        this.stack = [commonLayer];
     }
 
-    get(path, fn) {
-        let route = this.route(path);
-        route.get(fn);
-        return this;
-    }
-
-    handle(req, res) {
+    handle(req, res, done) {
         let method = req.method;
-        this.stack.forEach(router => {
-            if (router.match(req.url) && router.route && router.route.handlesMethod(method)) {
-                return router.handleReq(req, res);
+        let idx = 0;
+
+        let next = (err) => {
+            let layerError = (err === 'route' ? null : err);
+
+            // 跳过路由系统
+            if (layerError === 'router') {
+                return done(null);
             }
-        });
-        return this.stack[0].handleReq(res, res);
+
+            if (idx >= this.stack.length || layerError) {
+                return done(layerError);
+            }
+
+            let layer = this.stack[idx++];
+            if (layer.match(req.url) && layer.route && layer.route.handlesMethod(method)) {
+                return layer.handleReq(req, res, next);
+            } else {
+                next(layerError);
+            }
+        };
+
+        next();
+
+        // this.stack.forEach(router => {
+        //     if (router.match(req.url) && router.route && router.route.handlesMethod(method)) {
+        //         return router.handleReq(req, res);
+        //     }
+        // });
+        // return this.stack[0].handleReq(res, res);
     }
 
     route(path) {
         let route = new Route(path);
-        let layer = new Layer(path, (req, res) => {
-            route.dispatch(req, res);
-        });
+        let layer = new Layer(path, route.dispatch.bind(route));
         layer.route = route;
         this.stack.push(layer);
         return route;

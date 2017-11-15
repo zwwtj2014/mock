@@ -2,7 +2,7 @@
  * @Author: clam
  * @Date: 2017-11-12 00:20:57
  * @Last Modified by: clam
- * @Last Modified time: 2017-11-12 00:46:21
+ * @Last Modified time: 2017-11-16 00:10:02
  */
 
 /**
@@ -30,9 +30,12 @@ class Layer {
         this._handle = fn;
     }
 
-    handleReq(req, res) {
-        if (this._handle) {
-            this._handle(req, res);
+    handleReq(req, res, next) {
+        let fn = this._handle;
+        try {
+            fn(req, res, next);
+        } catch (err) {
+            next(err);
         }
     }
 
@@ -41,6 +44,21 @@ class Layer {
      */
     match(path) {
         return path === this._path || this._path === '*';
+    }
+
+    handleError(error, req, res, next) {
+        let fn = this.handle;
+
+        //如果函数参数不是标准的4个参数，返回错误信息
+        if (fn.length !== 4) {
+            return next(error);
+        }
+
+        try {
+            fn(error, req, res, next);
+        } catch (err) {
+            next(err);
+        }
     }
 }
 
