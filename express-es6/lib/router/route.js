@@ -11,7 +11,7 @@ class Route {
         http.METHODS.forEach(method => {
             method = method.toLowerCase();
             Route.prototype[method] = (fn) => {
-                let layer = new Layer('/', fn);
+                let layer = new Layer('/', fn); // Route里的Layer
                 layer.method = method;
                 this.methods[method] = true;
                 this.stack.push(layer);
@@ -30,6 +30,10 @@ class Route {
         let method = req.method.toLowerCase();
         let idx = 0;
 
+        /**
+         * 这里的next函数起到遍历route里的stack的作用
+         * => 即找同一个Path可能对应的METHOD不同的情况
+         */
         let next = (err) => {
             // 跳过route
             if (err && err === 'route') {

@@ -2,7 +2,7 @@
  * @Author: clam
  * @Date: 2017-11-12 00:20:18
  * @Last Modified by: clam
- * @Last Modified time: 2017-11-16 00:33:14
+ * @Last Modified time: 2017-11-18 00:01:09
  */
 'use strict'
 const Layer = require('./layer');
@@ -34,6 +34,10 @@ class Router {
         let method = req.method;
         let idx = 0;
 
+        /**
+         * 这里的next函数起到遍历router里的stack的作用
+         * => 即找同一个Route匹配的path的情况
+         */
         let next = (err) => {
             let layerError = (err === 'route' ? null : err);
 
@@ -66,7 +70,7 @@ class Router {
 
     route(path) {
         let route = new Route(path);
-        let layer = new Layer(path, route.dispatch.bind(route));
+        let layer = new Layer(path, route.dispatch.bind(route)); // router里的layer
         layer.route = route;
         this.stack.push(layer);
         return route;
