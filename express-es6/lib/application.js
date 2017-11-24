@@ -2,7 +2,7 @@
  * @Author: clam
  * @Date: 2017-11-12 00:20:39
  * @Last Modified by: clam
- * @Last Modified time: 2017-11-16 00:34:46
+ * @Last Modified time: 2017-11-18 00:23:57
  */
 'use strict'
 const http = require('http');
@@ -22,9 +22,21 @@ class App {
         });
     }
 
-    // get(path, fn) {
-    //     return this._router.get(path, fn);
-    // }
+    use(fn, ...args) {
+        let path = '/';
+
+        /**
+         * 因为Application.use支持可选路径，所以需要增加处理路径的重载代码
+         *
+         * 路径挂载
+         */
+        if (typeof fn !== 'function') {
+            path = fn;
+            fn = args[0];
+        }
+        this._router.use(path, fn);
+        return this;
+    }
 
     listen(port, cb, ...args) {
         const server = http.createServer((req, res) => {

@@ -2,32 +2,44 @@
  * @Author: clam
  * @Date: 2017-11-12 00:20:18
  * @Last Modified by: clam
- * @Last Modified time: 2017-11-18 00:01:09
+ * @Last Modified time: 2017-11-18 01:16:41
  */
 'use strict'
 const Layer = require('./layer');
 const Route = require('./route');
 const http = require('http');
 
-class Router {
+
+class RouteBase {
 
     constructor() {
-        // let commonLayer = new Layer('*', (req, res) => {
-        //     res.writeHead(200, {
-        //         'Content-Type': 'text/plain'
-        //     });
-        //     res.end('404');
-        // });
-        this.stack = [];
-
         http.METHODS.forEach(method => {
             method = method.toLowerCase();
-            Router.prototype[method] = (path, fn) => {
+            RouteBase.prototype[method] = (path, fn) => {
                 let route = this.route(path);
                 route[method].call(route, fn);
                 return this;
             };
         });
+    }
+
+    use(fn, ...args) {
+        let path = '/';
+
+        if (typeof fn !== 'function') {
+            path = fn;
+            fn = args[0];
+        }
+
+        /**
+         * 从这能看到普通路由和中间件的区别:
+         * => 普通路由(app.METHOD(path,fn))放到Route中，且Router.route属性指向Route对象，Router.handle属性指向Route.dispatch函数；
+         * => 中间件(app.use(path,fn))的Router.route属性为undefined，Router.handle指向中间件处理函数，被放到Router.stack数组中。
+         */
+        let layer = new Layer(path, fn);
+        layer.route = undefined;
+        this.stack.push(layer);
+        return this;
     }
 
     handle(req, res, done) {
@@ -77,4 +89,47 @@ class Router {
     }
 }
 
-exports = module.exports = Router;
+/**
+ * 问题: 如果像下面的代码一样创建一个新的路由系统是无法让路由系统内部的逻辑生效的，因为这个路由系统没法添加到现有的系统中。
+ *
+ * ```
+ * let app = express();
+ * let router = express.Router();
+ * router.use(function (req, res, next) {
+ *  console.log('Time:', Date.now());
+ * });
+ * ```
+ *
+ * 答案: express将Router定义成一个特殊的中间件，而不是一个单独的类。这样可以直接使用下面的方式进行挂载:
+ * ```
+ * let app = express();
+ * let router = express.Router();
+ *
+ * app.use('/',router);
+ * ```
+ */
+// class Router extends RouteBase {
+
+//     constructor() {
+//         super();
+//         this.stack = [];
+//         return this.router;
+//     }
+
+//     router(req, res, next) {
+//         Router.prototype.handle(req, res, next);
+//     }
+// }
+
+module.exports = function () {
+    function router(req, res, next) {
+        router.handle(req, res, next);
+    }
+
+    Object.setPrototypeOf(router, new RouteBase());
+
+    router.stack = [];
+    return router;
+};
+
+// exports = module.exports = Router;
